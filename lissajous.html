@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lissajous Curve Explorer</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .equations {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .current-values {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .suggestions {
+            margin-top: 20px;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lissajous Curve Explorer</h1>
+    <div class="equations">
+        \[x = A \sin(at + \delta)\]
+        \[y = B \sin(bt)\]
+    </div>
+    <canvas id="lissajousCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <div class="control">
+            <label for="freqX">Frequency X (a):</label>
+            <input type="range" id="freqX" min="1" max="10" value="1" step="1">
+            <input type="number" id="freqXInput" value="1" min="1" max="10">
+        </div>
+        <div class="control">
+            <label for="freqY">Frequency Y (b):</label>
+            <input type="range" id="freqY" min="1" max="10" value="1" step="1">
+            <input type="number" id="freqYInput" value="1" min="1" max="10">
+        </div>
+        <div class="control">
+            <label for="phase">Phase Shift (δ):</label>
+            <input type="range" id="phase" min="0" max="2" value="0" step="0.25">
+            <input type="number" id="phaseInput" value="0" min="0" max="2" step="0.25">
+        </div>
+        <div class="control">
+            <label for="ampX">Amplitude X (A):</label>
+            <input type="range" id="ampX" min="10" max="200" value="150" step="10">
+            <input type="number" id="ampXInput" value="150" min="10" max="200" step="10">
+        </div>
+        <div class="control">
+            <label for="ampY">Amplitude Y (B):</label>
+            <input type="range" id="ampY" min="10" max="200" value="150" step="10">
+            <input type="number" id="ampYInput" value="150" min="10" max="200" step="10">
+        </div>
+    </div>
+    <div class="current-values" id="currentValues"></div>
+    <div class="suggestions">
+        <h3>Suggested Curves:</h3>
+        <button onclick="setValues(1, 1, 0.5, 150, 150)">Circle</button>
+        <button onclick="setValues(2, 1, 0, 150, 150)">Figure 8</button>
+        <button onclick="setValues(3, 2, 0.5, 150, 150)">Trefoil</button>
+        <button onclick="setValues(5, 4, 0, 150, 150)">Star</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('lissajousCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        function updateValue(id) {
+            const rangeElement = document.getElementById(id);
+            const inputElement = document.getElementById(id + 'Input');
+            const value = rangeElement.value;
+            inputElement.value = value;
+            return parseFloat(value);
+        }
+
+        function updateSlider(id) {
+            const rangeElement = document.getElementById(id);
+            const inputElement = document.getElementById(id + 'Input');
+            const value = inputElement.value;
+            rangeElement.value = value;
+            return parseFloat(value);
+        }
+
+        function drawLissajous() {
+            const freqX = updateValue('freqX');
+            const freqY = updateValue('freqY');
+            const phase = updateValue('phase') * Math.PI;
+            const ampX = updateValue('ampX');
+            const ampY = updateValue('ampY');
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.beginPath();
+            ctx.strokeStyle = 'blue';
+
+            for (let t = 0; t < 2 * Math.PI; t += 0.01) {
+                const x = width / 2 + ampX * Math.sin(freqX * t + phase);
+                const y = height / 2 + ampY * Math.sin(freqY * t);
+
+                if (t === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            ctx.stroke();
+
+            // Update current values display
+            document.getElementById('currentValues').innerHTML = `
+                Current Equations:<br>
+                \(x = ${ampX.toFixed(0)} \\sin(${freqX}t + ${(phase/Math.PI).toFixed(2)}\\pi)\)<br>
+                \(y = ${ampY.toFixed(0)} \\sin(${freqY}t)\)
+            `;
+            MathJax.typeset();
+        }
+
+        function setValues(fx, fy, p, ax, ay) {
+            document.getElementById('freqX').value = fx;
+            document.getElementById('freqY').value = fy;
+            document.getElementById('phase').value = p;
+            document.getElementById('ampX').value = ax;
+            document.getElementById('ampY').value = ay;
+            document.getElementById('freqXInput').value = fx;
+            document.getElementById('freqYInput').value = fy;
+            document.getElementById('phaseInput').value = p;
+            document.getElementById('ampXInput').value = ax;
+            document.getElementById('ampYInput').value = ay;
+            drawLissajous();
+        }
+
+        document.querySelectorAll('input[type="range"]').forEach(input => {
+            input.addEventListener('input', drawLissajous);
+        });
+
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', () => {
+                updateSlider(input.id.replace('Input', ''));
+                drawLissajous();
+            });
+        });
+
+        drawLissajous();
+    </script>
+</body>
+</html>
